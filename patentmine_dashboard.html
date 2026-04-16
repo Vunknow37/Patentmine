@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatentMine: AI Deep IP Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #f4f6f9;
+            --bg-card: #ffffff;
+            --primary: #0263f2;
+            --secondary: #00b4d8;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 30px 5%;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.8rem;
+            margin: 0 0 10px 0;
+            color: #111827;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-top: 0;
+            font-weight: 400;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto 40px auto;
+            box-shadow: var(--shadow);
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            background: #f9fafb;
+            border: 1px solid var(--border);
+            color: #111827;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(2, 99, 242, 0.2);
+        }
+
+        button.primary-btn {
+            background: var(--primary);
+            border: none;
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 1.05rem;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button.primary-btn:hover {
+            background: #0252c8;
+        }
+        
+        button.primary-btn:active {
+            transform: scale(0.98);
+        }
+
+        .dashboard {
+            padding: 0 5% 50px 5%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 25px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+
+        .meta {
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .assignee {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .scores-grid {
+            display: flex;
+            justify-content: space-between;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 5px 0 10px 0;
+        }
+
+        .score-circle {
+            width: 70px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: conic-gradient(var(--clr) calc(var(--p) * 1%), #e2e8f0 0);
+            position: relative;
+        }
+
+        .score-circle::before {
+            content: "";
+            position: absolute;
+            inset: 6px;
+            background: #f8fafc;
+            border-radius: 50%;
+        }
+
+        .score-value {
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0f172a;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .score-label {
+            position: relative;
+            z-index: 1;
+            font-size: 0.65rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .abstract {
+            font-size: 0.95rem;
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #cbd5e1;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .tag {
+            background: #e0f2fe;
+            color: #0284c7;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Utilities Section */
+        .utilities {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .btn-outline:hover {
+            background: #f0f9ff;
+        }
+
+        .watchlist-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .watchlist-row input {
+            padding: 8px 12px;
+            min-width: 0;
+            font-size: 0.9rem;
+        }
+        
+        .watchlist-row button {
+            background: #1e293b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .watchlist-row button:hover {
+            background: #0f172a;
+        }
+
+        .ai-summary-box {
+            display: none;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        .spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+            padding: 60px;
+            font-size: 1.1rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>PatentMine</h1>
+        <p class="subtitle">AI Deep IP Discovery | Systematically unlock public domain disruption</p>
+    </header>
+
+    <div class="filter-bar">
+        <input type="text" id="keyword" placeholder="Keywords (e.g. solid state battery)">
+        <select id="domain">
+            <option value="">Any Tech Domain</option>
+            <option value="Pharmaceuticals">Pharmaceuticals</option>
+            <option value="Semiconductors">Semiconductors</option>
+            <option value="Batteries / Energy Storage">Batteries / Energy Storage</option>
+            <option value="Digital Communications">Digital Communications</option>
+            <option value="Wind Energy">Wind Energy</option>
+        </select>
+        <button class="primary-btn" onclick="fetchPatents()">Scan Neural Database</button>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+    <div class="dashboard" id="dashboard">
+        <div class="empty-state">Enter keywords above or click "Scan" to fetch system data.</div>
+    </div>
+
+    <script>
+        // Store current results for blueprint generation
+        let currentPatents = [];
+
+        async function fetchPatents() {
+            const keyword = document.getElementById('keyword').value;
+            const domain = document.getElementById('domain').value;
+            const dashboard = document.getElementById('dashboard');
+            const spinner = document.getElementById('spinner');
+
+            let queryStr = keyword;
+            if (domain && !keyword.includes(domain)) {
+                queryStr += " " + domain;
+            }
+            
+            dashboard.innerHTML = '';
+            spinner.style.display = 'block';
+
+            try {
+                const res = await fetch(`/patents?q=${encodeURIComponent(queryStr.trim())}`);
+                if (!res.ok) throw new Error('Network failure');
+                const data = await res.json();
+                
+                spinner.style.display = 'none';
+
+                if (!data.patents || data.patents.length === 0) {
+                    dashboard.innerHTML = `<div class="empty-state">No opportunities found matching these strict parameters.</div>`;
+                    return;
+                }
+                
+                currentPatents = data.patents;
+
+                data.patents.forEach((p, index) => {
+                    const el = document.createElement('div');
+                    el.className = 'card';
+                    el.innerHTML = `
+                        <div class="card-header">
+                            <div>
+                                <div class="meta">${p.tech || 'UNKNOWN DOMAIN'} &bull; LAPSED: ${p.lapse}</div>
+                                <h3 class="title">${p.title}</h3>
+                                <div class="assignee">Originated by: <strong>${p.assignee}</strong></div>
+                            </div>
+                        </div>
+                        
+                        <div class="tags">
+                            ${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                        </div>
+
+                        <div class="scores-grid">
+                            <div class="score-circle" style="--p: ${p.score}; --clr: #f59e0b;">
+                                <span class="score-value">${p.score}</span><span class="score-label">Utility</span>
+                            </div>
+                            <div class="score-circle" style="--p: ${p.recency}; --clr: #3b82f6;">
+                                <span class="score-value">${p.recency}</span><span class="score-label">Recency</span>
+                            </div>
+                            <div class="score-circle" style="--p: ${p.prestige}; --clr: #8b5cf6;">
+                                <span class="score-value">${p.prestige}</span><span class="score-label">Prestige</span>
+                            </div>
+                            <div class="score-circle" style="--p: ${p.breadth}; --clr: #10b981;">
+                                <span class="score-value">${p.breadth}</span><span class="score-label">Breadth</span>
+                            </div>
+                        </div>
+                        
+                        <div class="abstract">${p.abstract}</div>
+
+                        <div class="ai-summary-box" id="ai-box-${p.id}"></div>
+
+                        <div class="utilities">
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn-outline" onclick="triggerAISummary('${p.id}', ${index})">
+                                    ✨ Auto-Summarize Abstract (Free LLM)
+                                </button>
+                                <button class="btn-outline" onclick="downloadBlueprint(${index})">
+                                    📥 Download AI Blueprint
+                                </button>
+                            </div>
+                            
+                            <div class="watchlist-row">
+                                <input type="email" id="email-${p.id}" placeholder="founder@startup.com">
+                                <button onclick="addToWatchlist('${p.id}')">Add to Watchlist</button>
+                            </div>
+                        </div>
+                    `;
+                    dashboard.appendChild(el);
+                });
+
+            } catch (err) {
+                spinner.style.display = 'none';
+                dashboard.innerHTML = `<div class="empty-state" style="color: #ef4444;">Error resolving patent database. Check connection.</div>`;
+                console.error(err);
+            }
+        }
+        
+        // AI Summarizer logic mapped via Pollinations
+        async function triggerAISummary(id, index) {
+            const patent = currentPatents[index];
+            const box = document.getElementById(`ai-box-${id}`);
+            box.style.display = 'block';
+            box.innerHTML = `<em>Generating deep strategic insight via LLM...</em>`;
+            
+            const prompt = `Act as a brilliant startup advisor. Read this patent abstract and provide exactly 2 sentences explaining the core disruptive business value and why an entrepreneur should care. Do not just summarize it, provide explicit strategic commercial reasoning. Abstract: ${patent.abstract}`;
+            
+            try {
+                const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`);
+                if (!res.ok) throw new Error("Inference gateway blocked.");
+                const insightText = await res.text();
+                box.innerHTML = `<strong>Advanced AI Insight:</strong> ${insightText}`;
+            } catch (err) {
+                box.innerHTML = `<strong>Inference failed:</strong> Could not connect to LLM.`;
+            }
+        }
+
+        // Blueprint Generator via blob
+        function downloadBlueprint(index) {
+            const item = currentPatents[index];
+            const pitch = item.startup_pitch || "Exploit this expired IP to build a disruption MVP instantly!";
+            
+            const content = `AI BUSINESS BLUEPRINT
+Target: ${item.title}
+Domain: ${item.tech || 'N/A'}
+Original Assignee: ${item.assignee || 'N/A'}
+
+STRATEGY:
+${pitch}
+
+TECHNICAL SUMMARY:
+${item.abstract || 'N/A'}
+
+(Generated by PatentMine Deep-Learning Engine)
+`;
+            
+            const blob = new Blob([content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `PatentMine_${item.id}_Blueprint.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Watchlist Integration
+        async function addToWatchlist(id) {
+            const emailInput = document.getElementById(`email-${id}`);
+            const email = emailInput.value;
+            
+            if (!email) {
+                alert("⚠️ Email is required to set up an active alert hook.");
+                return;
+            }
+            
+            try {
+                const res = await fetch('/watchlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patent_id: id, email: email })
+                });
+                if (res.ok) {
+                    alert("✅ Successfully added to B2B active watchlist alerts.");
+                    emailInput.value = '';
+                } else {
+                    alert("❌ Backend rejected watchlist request.");
+                }
+            } catch (err) {
+                alert("❌ Cannot reach backend to add alert.");
+            }
+        }
+
+        document.getElementById('keyword').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') fetchPatents();
+        });
+        
+    </script>
+</body>
+</html>
